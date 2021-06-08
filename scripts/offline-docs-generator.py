@@ -21,6 +21,7 @@ dir_maths =  os.path.join( dir_docs, 'imgs','maths')
 dir_styles =  'styles'
 dir_styles_full = os.path.join( dir_docs, 'styles')
 
+#Create the directories to save the doc they don't exist
 if not os.path.exists(dir_docs): os.makedirs(dir_docs)
 if not os.path.exists(dir_imgs): os.makedirs(dir_imgs)
 if not os.path.exists(dir_maths): os.makedirs(dir_maths)	
@@ -28,20 +29,69 @@ if not os.path.exists(dir_styles_full): os.makedirs(dir_styles_full)
 
 pages =[]
 imgs  =[]
-styles=[]
 maths =[]
 
 def sureUrl(url):
+	'''
+	This function generates the complete url after getting urls form src
+	/wiki/OpenSCAD_User_Manual get converted to https://en.wikibooks.org/wiki/OpenSCAD_User_Manual
+
+	'''
 	if url.startswith('//'):
 		url = 'https:'+url
 	elif not url.startswith( url_wiki ):
 		url = urllib.parse.urljoin( url_wiki, url[0]=="/" and url[1:] or url)
 	return url
 
-def getPage( url=url,folder=dir_docs ):
+def getTags():
+	'''
+	This function handles the different tags present in the HTML document
+	for example the image tags
+
+	'''
+	pass
+
+def getMaths():
+	'''
+	This function generates the image version of the math formulas
+	to be displayed in various HTML files, for example
+	https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Mathematical_Operators
+	and saves them to the directory /openscad_docs/imgs/maths
+
+	'''
+	pass
+
+def getImages():
+	'''
+	This function generates the images present the in HTML documents
+	and saves them to the directory /openscad_docs/imgs
+
+	'''
+	pass
+
+def getFooter( url, name ):
+	'''
+	This function generates the Footer with the license attribution for all the pages
+
+	'''
+	footer = (f'''<footer class='mw-body' style="font-size:13px;color:darkgray;text-align:center;margin-bottom:-1px">
+	From the WikiBooks article <a style="color:black" href="{url}">{name}</a> 
+	(provided under <a style="color:black" href="https://creativecommons.org/licenses/by-sa/3.0/">
+	CC-BY-SA-3.0</a>)</footer>''')
+
+	return bs(footer,'html.parser')
+
+def getPages( url=url,folder=dir_docs ):
+	'''
+	This is the main function of the program
+	which generates the HTML document from the given url
+	and calls different functions to generate the Offline
+	version of the page and save it under the directory /openscad_docs
+	
+	'''
 	url = sureUrl(url)
 	if url.split("#")[0] not in pages:
-		pages.append( url.split("#")[0] )
+		pages.append( url.split("#")[0] )							#add the url to the `pages` list so that they don't get downloaded again
 		wiki_url = url
 		url = url.replace(url_wiki+'/wiki/', "")
 		url = url_api + url
@@ -67,9 +117,10 @@ def getPage( url=url,folder=dir_docs ):
 		h1_tag = bs(f'<h1 class="firstHeading" id="firstHeading">{title.string}</h1>','html.parser')
 		soup.body.insert(0,h1_tag)
 
+		soup.body.append( getFooter( wiki_url, title.text ))
+
 		fname = fname + ".html"
 		filepath = os.path.join( folder, fname)
-
 
 		print("Saving: ", filepath)
 		open(filepath, "w", encoding="utf-8").write( str(soup) )
@@ -77,8 +128,7 @@ def getPage( url=url,folder=dir_docs ):
 
 
 if(__name__ == '__main__'):
-	getPage(url)
-	print("# of pages: ", len(pages))
-	print("# of styles: ", len(styles))
-	print("# of imgs: ", len(imgs))
-	print("# of maths: ", len(maths))
+	getPages(url)
+	print("Total number of pages generated is \t:\t", len(pages))
+	print("Total number of images generated is \t:\t", len(imgs))
+	print("Total number of math-images generated is:\t", len(maths))
