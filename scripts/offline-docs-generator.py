@@ -69,6 +69,46 @@ def getImages():
 	'''
 	pass
 
+def cleanSoup(soup):
+	'''
+	This function cleans the soup by removing the redundant HTML tags
+	and the parts that are unrelated to the User Manual
+	'''
+
+	#The following deletes the Tags which aren't required in the User Manual
+	red_div_cls  = ["printfooter","catlinks","noprint","magnify"]
+	red_span_cls = ["mw-editsection","toctogglespan","noprint"]
+	red_table_cls= ['noprint','ambox']
+	red_input_cls= ['toctogglecheckbox']
+	for cls in red_div_cls: 
+		for tag in soup.findAll('div',{'class':cls}):
+			tag.decompose()
+	for cls in red_span_cls: 
+		for tag in soup.findAll('span',{'class':cls}):
+			tag.decompose()
+	for cls in red_table_cls: 
+		for tag in soup.findAll('table',{'class':cls}): 
+			tag.decompose()
+	for cls in red_input_cls: 
+		for tag in soup.findAll('input',{'class':cls}):
+			tag.decompose()
+	for tag in soup.findAll('style'):
+		tag.decompose()
+
+	#The following removes the comments present in the HTML document
+	comments = soup.findAll(text=lambda text: isinstance(text, Comment))
+	[comment.extract() for comment in comments]
+
+	#The following replaces the redundant Tags with the content present in inside of them
+	rep_div_cls = ["mw-highlight"]
+	rep_span_cls= ["toctext","mw-headline"]
+	for kls in rep_div_cls:
+			for tag in soup.findAll('div',kls):
+				tag.replaceWithChildren()
+	for kls in rep_span_cls:
+			for tag in soup.findAll('span',kls):
+				tag.replaceWithChildren()
+
 def getFooter( url, name ):
 	'''
 	This function generates the Footer with the license attribution for all the pages
@@ -88,6 +128,7 @@ def getPages( url=url,folder=dir_docs ):
 	and calls different functions to generate the Offline
 	version of the page and save it under the directory /openscad_docs
 	
+
 	'''
 	url = sureUrl(url)
 	if url.split("#")[0] not in pages:
@@ -116,6 +157,8 @@ def getPages( url=url,folder=dir_docs ):
 
 		h1_tag = bs(f'<h1 class="firstHeading" id="firstHeading">{title.string}</h1>','html.parser')
 		soup.body.insert(0,h1_tag)
+
+		cleanSoup(soup)
 
 		soup.body.append( getFooter( wiki_url, title.text ))
 
